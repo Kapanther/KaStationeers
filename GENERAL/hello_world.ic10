@@ -1,15 +1,13 @@
 # Hello World - General IC10 Script
-# This is a basic IC10 script that outputs "Hello World" to a console display
-# Connect a Console display to the IC housing running this script
+# This is a basic IC10 script for Stationeers
+# This script demonstrates basic IC10 structure and looping
 
-alias console d0
+alias led d0
 
 start:
-# Clear the display
-s console Mode 0
-# Set the display to show text
-s console Mode 1
-# Write "Hello World" to line 0
-s console Setting 0
+# Turn on an LED or device connected to d0
+s led On 1
+# Wait/yield to prevent high CPU usage
+yield
 # Loop forever
 j start

@@ -1,16 +1,14 @@
 # Hello World - Mars Specific IC10 Script
 # This script is tailored for Mars environments
 # Mars atmosphere: 95.9% CO2, thin atmosphere, cold temperatures
-# Connect a Console display to the IC housing running this script
+# This demonstrates basic IC10 structure for Mars-specific automation
 
-alias console d0
+alias led d0
 
 start:
-# Clear the display
-s console Mode 0
-# Set the display to show text
-s console Mode 1
-# Write "Hello Mars" to line 0
-s console Setting 0
+# Turn on an LED or device connected to d0
+s led On 1
+# Wait/yield to prevent high CPU usage
+yield
 # Loop forever
 j start
