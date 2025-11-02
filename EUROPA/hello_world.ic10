@@ -1,0 +1,16 @@
+# Hello World - Europa Specific IC10 Script
+# This script is tailored for Europa (Moon) environments
+# Europa: Icy surface, extremely cold, radiation concerns
+# Connect a Console display to the IC housing running this script
+
+alias console d0
+
+start:
+# Clear the display
+s console Mode 0
+# Set the display to show text
+s console Mode 1
+# Write "Hello Europa" to line 0
+s console Setting 0
+# Loop forever
+j start
