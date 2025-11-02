@@ -1,0 +1,21 @@
+#device Alias
+define Filtrate -348054045 #Filtration
+define InsTankB 1280378227 #WasteTankBig
+#OxyRegulator
+#Set Variable Alias
+alias WastePres r0
+alias WasteTemp r1
+#define constancts
+define TankMaxTemp 318.15 #c 45
+define InputMinPres 5 #c 45
+sbn Filtrate HASH("FiltrateM") On 1
+refreshVars:
+lbn WastePres InsTankB HASH("FiltrateM") Pressure 3
+lbn WasteTemp InsTankB HASH("FiltrateM") Temperature 3
+CheckTankTemp:
+brgt WasteTemp TankMaxTemp 4
+brlt WastePres InputMinPres 3
+sbn Filtrate HASH("FiltrateM") Mode 1
+j refreshVars
+sbn Filtrate HASH("FiltrateM") Mode 0
+j refreshVars

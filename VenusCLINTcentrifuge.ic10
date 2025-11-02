@@ -1,0 +1,53 @@
+push HASH("CC1")
+push HASH("CC2")
+push HASH("CC3")
+push HASH("CC4")
+#push HASH("CC5")
+#push HASH("CC6")
+
+define CCfuge 1238905683
+define LED 1944485013
+define Display -815193061 #smallLED display
+define Lever 1220484876
+alias tgtCF r10
+sb Display Mode 1
+sb LED Color Color.Green
+sb LED On 1
+restart:
+move sp 1
+start:
+bgt sp 4 restart #set for number of CF
+peek tgtCF
+add sp sp 1
+lbn r1 CCfuge tgtCF Reagents 3
+div r2 r1 3000
+sbn Display tgtCF Setting r2
+checkstate:
+lbn r4 LED tgtCF Color 3
+beq r4 0 winddown
+beq r4 3 unload
+checkiffull:
+lbn r1 CCfuge tgtCF Reagents 3
+bgt r1 150 winddown # set number to requirements
+checkoveride:
+lbn r3 Lever tgtCF Setting 3
+bnez r3 winddown
+sbn CCfuge tgtCF Open 0
+sbn CCfuge tgtCF On 1
+j start
+
+winddown:
+sbn CCfuge tgtCF On 0
+sbn LED tgtCF Color 0
+lbn r5 CCfuge tgtCF Rpm 3
+beqz r5 unload
+j start
+unload:
+sbn LED tgtCF Color 3
+sbn CCfuge tgtCF Open 1
+lbn r1 CCfuge tgtCF Reagents 3
+bgt r1 3 start
+sbn LED tgtCF Color Color.Green
+sbn CCfuge tgtCF Open 0
+sbn CCfuge tgtCF On 1
+j start

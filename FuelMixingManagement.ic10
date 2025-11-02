@@ -1,0 +1,89 @@
+#device Alias
+define GasMixer 2104106366 #"FuelMixer" inout1 should be volatiles
+define InsTank 272136332 #"FuelTank", "OxyTank", "VolTank", "NitroTank"
+define LED 1944485013 #"WarningLight"
+define Filtrate -348054045  #"FilterOxite"
+define Crusher 443849486 #"OxiteCrusher"
+define LEDDisplay -815193061 #"TestVar"
+#Set Variable Alias
+alias OxyPressure r0
+alias NitroPressure r1
+alias VolPressure r2
+alias FuelPressure r3
+alias doFuelMixing r4
+alias doFiltrate r5
+alias filterLevel1 r6
+alias filterLevel2 r7
+alias filterLevelTotal r8
+alias filterInputPressure r9
+#define constants
+define minOxyPSI 500 #
+define minVolPSI 500 #
+define maxOxyPressure 8000#
+define maxNitroPressure 8000# might need to set 1000 otherwise it turns to liquid
+define maxVolPressure 8000#
+define maxFuelPressure 8000
+define minFiltrationPressure 10
+define maxFiltrationPressure 8000
+define minFilterLevel 10
+define gasmixsetting 67
+#set gas mixer ratio
+sbn GasMixer HASH("FuelMixer") Setting gasmixsetting
+refreshVars: #ScriptEntryPoint
+lbn OxyPressure InsTank HASH("OxyTank") Pressure 3
+lbn NitroPressure InsTank HASH("NitroTank") Pressure 3
+lbn VolPressure InsTank HASH("VolTank") Pressure 3
+lbn FuelPressure InsTank HASH("FuelTank") Pressure 3
+add doFuelMixing 1 0
+lbn filterInputPressure Filtrate HASH("FilterOxite") PressureInput 3
+lbns filterLevel1 Filtrate HASH("FilterOxite") 0 Quantity 3
+lbns filterLevel2 Filtrate HASH("FilterOxite") 1 Quantity 3
+add filterLevelTotal filterLevel1 filterLevel2
+add doFiltrate 1 0
+sbn LEDDisplay HASH("TestVar") Setting filterInputPressure
+checkOxyPressure:
+brgt OxyPressure minOxyPSI 3
+add doFuelMixing 0 0
+j manageFuelMixing
+checkVolPressure:
+brgt VolPressure minVolPSI 3
+add doFuelMixing 0 0
+j manageFuelMixing
+checkFuelPressure:
+brlt FuelPressure maxFuelPressure 3
+add doFuelMixing 0 0
+manageFuelMixing:
+breq doFuelMixing 0 3
+sbn GasMixer HASH("FuelMixer") On 1
+j checkFiltrate
+sbn GasMixer HASH("FuelMixer") On 0
+j checkFiltrate
+checkFiltrate:
+brgt filterLevelTotal minFilterLevel 3
+add doFiltrate 0 0
+j manageFiltrate
+checkMaxOxyPressure:
+brlt OxyPressure maxOxyPressure 3
+add doFiltrate 0 0
+j manageFiltrate
+checkMaxNitroPressure:
+brlt NitroPressure maxNitroPressure 3
+add doFiltrate 0 0
+j manageFiltrate
+checkInputPressure:
+brgt filterInputPressure minFiltrationPressure 3
+add doFiltrate 0 0
+j manageFiltrate
+manageFiltrate:
+breq doFiltrate 0 4
+sbn Filtrate HASH("FilterOxite") Mode 1
+sbn LED HASH("WarningLight") Color 2 #normal light green
+j manageCrusher
+sbn Filtrate HASH("FilterOxite") Mode 0
+sbn LED HASH("WarningLight") Color 4 #warning light on red
+manageCrusher:
+brgt filterInputPressure maxFiltrationPressure 3
+sbn Crusher HASH("OxiteCrusher") On 1
+j refreshVars
+sbn Crusher HASH("OxiteCrusher") On 0
+j refreshVars

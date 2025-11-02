@@ -1,0 +1,4 @@
+#device Alias
+alias ActiveVent d0
+#var Alias
+alias WastePressure r1

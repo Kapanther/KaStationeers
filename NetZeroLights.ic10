@@ -1,0 +1,21 @@
+#Net Zero Lights
+#also turns off lights unless in room
+define OccSensor 322782515 #"Occupancy Sensor"
+define LightLongWide 555215790 #LightLongWide
+#Set Variable Alias
+alias MotionDetect r1
+alias MotionIdleTimer r2
+#Define Constants
+define LightOffSeconds 1000 #1 minute
+refreshVars:
+lbn MotionDetect OccSensor HASH("Occupancy Sensor") Quantity 3
+checkMotionSensor:
+brgt MotionDetect 0 4 #motion detected turn on lights reset timer
+add MotionIdleTimer MotionIdleTimer 1 #add one second to idle timer
+brgt MotionIdleTimer LightOffSeconds 5 #if no motion for long enough turn off lights
+j refreshVars
+sbn LightLongWide HASH("Wall Light (Long Wide)") On 1 #turn off lights as no motion detected
+add MotionIdleTimer 0 0 #reset idle timer to 0
+j refreshVars
+sbn LightLongWide HASH("Wall Light (Long Wide)") On 0 #turn off lights as no motion detected
+j refreshVars

@@ -1,0 +1,92 @@
+#device Alias
+alias stormvent d0
+alias extsensor d1
+alias ArcFurn d2
+alias stormtank d3
+define Genie 813146305 #mainGenerator
+define sBattery -400115994 #SmallBattery
+define lBattery -1388288459
+define LED 1944485013 #oreLight
+define MDisplay -53151617
+define VPump -321403609
+define TPump 1310794736
+define PipeAnal 435685051
+define flight -1535893860
+#Set Variable Alias
+alias bCharge r0
+alias GenOn r1
+alias DoSmelt r2
+alias HasCoal r3
+#define constants
+define MinCharge 0.2
+define MaxCharge 0.9
+define Backup HASH("Backup Battery")
+sbn LED HASH("CoalLight") On 1 #nocoal
+sb MDisplay Mode 1
+sb PipeAnal On 1
+sb TPump On 0
+sb TPump Setting 70
+sb VPump On 0
+sb VPump Setting 10
+refreshVars:
+lbn GenOn Genie HASH("mainGenerator") On 3
+brdns ArcFurn 2
+ls DoSmelt ArcFurn 0 Occupied
+lbns HasCoal Genie HASH("mainGenerator") 0 Occupied 3
+checkPower:
+lbn r12 sBattery Backup Charge 1
+lbn r13 lBattery Backup Charge 1
+add r12 r12 r13
+lbn r13 sBattery Backup Maximum 1
+lbn r14 lBattery Backup Maximum 1
+add r13 r13 r14
+div bCharge r12 r13
+sbn MDisplay HASH("MainBattDisplay") Setting bCharge
+breq GenOn 0 4
+brlt bCharge MaxCharge 2
+sbn Genie HASH("mainGenerator") On 0 #turnoff
+j checkCoal
+checkBattery:
+brgt bCharge MinCharge 3
+sbn Genie HASH("mainGenerator") On 1 #turngenon
+jr 2
+sbn Genie HASH("mainGenerator") On 0 #turngenon
+checkCoal:
+breq HasCoal 1 4
+sbn LED HASH("CoalLight") Color Color.Red
+sb flight On 1
+j checkFurnace
+sbn LED HASH("CoalLight") Color Color.Green
+sb flight On 0
+checkFurnace:
+bdns ArcFurn stormatmo
+s ArcFurn On 1
+breq DoSmelt 0 5
+s ArcFurn Activate 1
+sbn LED HASH("arcLight") Color Color.Green
+sbn LED HASH("arcLight") On 1
+j stormatmo
+sbn LED HASH("arcLight") Color Color.Red
+sbn LED HASH("arcLight") On 0
+stormatmo:
+bdns stormvent WastePump
+l r13 extsensor Temperature
+bgt r13 653 ventoff
+brdns stormtank 3
+l r15 stormtank Pressure
+bgt r15 20000 ventoff #adjust max pressure
+s stormvent Mode 1
+s stormvent On 1
+j WastePump
+ventoff:
+s stormvent On 0
+WastePump:
+lbn r1 PipeAnal HASH("PooPipeAnal") Pressure 3
+brnez r1 4
+sbn VPump HASH("PooPump") On 0
+sbn TPump HASH("PooPump") On 0
+j nextCheck
+sbn VPump HASH("PooPump") On 1
+sbn TPump HASH("PooPump") On 1
+nextCheck:
+j refreshVars

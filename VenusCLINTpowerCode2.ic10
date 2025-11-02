@@ -1,0 +1,89 @@
+#Backup Battery IC - Klaiceps
+define cabanal 1036015121
+define smallbatt -400115994
+define bigbatt -1388288459
+define light 1944485013
+define flight -1535893860
+define mdisplay -53151617
+define optumus -1423212473
+define Genie 813146305 #mainGenerator
+define Mains HASH("Main Battery")
+define Backup HASH("Backup Battery")
+alias minpower r11
+alias Array r10
+alias bkupCharge r1
+alias bkupMaximum r2
+alias bkupPower r3
+alias mainCharge r4
+alias mainMaximum r5
+alias mainPower r6
+alias maxPower r7
+alias bkupMaxPower r8
+alias bkupRatio r9
+
+sb flight On 0
+sbn light Backup On 0
+sbn light Mains On 1
+sb mdisplay Mode 1
+sb optumus Setting 49500
+
+
+start:
+move minpower 100000  #set wattage to turn on backup
+
+BackupChargeCalcs:
+lbn r1 smallbatt Backup Charge 1
+lbn r2 bigbatt Backup Charge 1
+add bkupCharge r1 r2
+lbn r2 smallbatt Backup Maximum 1
+lbn r3 bigbatt Backup Maximum 1
+add bkupMaximum r2 r3
+div bkupPower bkupCharge bkupMaximum
+MainChargeCalcs:
+lb r4 smallbatt Charge 1
+lb r5 bigbatt Charge 1
+add mainCharge r4 r5
+sub mainCharge mainCharge bkupCharge
+lb r5 smallbatt Maximum 1
+lb r6 bigbatt Maximum 1
+add mainMaximum r5 r6
+sub mainMaximum mainMaximum bkupMaximum
+div mainPower mainCharge mainMaximum
+MainChargeDisplay:
+sbn mdisplay Mains Setting mainPower
+brlt mainPower 0.1 3
+sbn light Mains Color Color.Green
+j BackupChargeDisplay
+sbn light Mains Color Color.Red
+BackupChargeDisplay:
+sbn mdisplay Backup Setting bkupPower
+brlt bkupPower 0.1 3
+sbn light Backup Color Color.Green
+j CheckMains
+sbn light Backup Color Color.Red
+CheckMains:
+lbn maxPower cabanal Mains PowerPotential 1
+sbn mdisplay HASH("DebugLED") Setting maxPower
+blt maxPower minpower BackupPower
+sb flight On 0
+sbn light Backup On 0
+sbn optumus Backup On 0
+j rechargebackup
+
+BackupPower:
+sbn optumus Backup On 1
+sbn light Backup On 1
+lbn bkupMaxPower cabanal Backup PowerPotential 1
+brgt bkupMaxPower minpower 3
+sb flight On 1
+j start
+sb flight On 0
+j start
+
+rechargebackup:
+lbn bkupRatio smallbatt Backup Ratio 0
+brgt bkupRatio 0.9 3
+sbn Genie HASH("mainGenerator") On 1
+j start
+sbn Genie HASH("mainGenerator") On 0
+j start

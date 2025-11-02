@@ -1,0 +1,36 @@
+#device Alias
+define Bot 434786784 #"Hippo"
+define LEDDisplay -815193061 #"BotStatus"
+#Set Variable Alias
+alias BaseX r0
+alias BaseY r1
+alias BaseZ r2
+alias DoMining r4
+alias BotCharge r5
+alias BotMode r6
+alias OreNearby r7
+#define Constants
+define MinCharge 5000
+#get current coorddinates and set as base
+l BaseX db PositionX 
+l BaseY db PositionY 
+l BaseZ db PositionZ 
+refreshVars:
+ls BotCharge db 0 Charge
+l BotMode db Mode
+sbn LEDDisplay HASH("BotStatus") Setting BotCharge
+l OreNearby db MineablesInVicinity
+#if bot charge is low or ore is full return to base
+brlt BotCharge MinCharge 3
+breq BotMode 6 2
+j roamForOre
+add DoMining 0 0
+returnToBase:
+sbn Bot HASH("Hippo") TargetX BaseX
+sbn Bot HASH("Hippo") TargetY BaseY
+sbn Bot HASH("Hippo") TargetZ BaseZ
+sbn Bot HASH("Hippo") Mode 5
+j refreshVars
+roamForOre:
+s db Mode 3
+j refreshVars

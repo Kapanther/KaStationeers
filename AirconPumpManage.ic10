@@ -1,0 +1,33 @@
+#AIRCONPUMP management
+#device Alias
+alias Aircon db
+alias Pump d0
+alias prevAircon d1
+#var Alias
+alias InPres r0
+alias OutPres r1
+alias pSetting r2
+#define contants
+define step 0.01
+define pumpMax 10
+define pumpMin 0
+refreshVars: #refresh vars
+l InPres prevAircon PressureOutput
+l OutPres Aircon PressureOutput
+l pSetting Pump Setting
+pressureCheck:
+brgt InPres OutPres 2
+j decreasePres
+j increasePres
+increasePres:
+brlt pSetting pumpMax 2
+j refreshVars
+add pSetting pSetting step
+s Pump Setting pSetting
+j refreshVars
+decreasePres:
+brgt pSetting pumpMin 2
+j refreshVars
+sub pSetting pSetting step
+s Pump Setting pSetting
+j refreshVars

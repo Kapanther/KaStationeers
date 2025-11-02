@@ -1,0 +1,20 @@
+#device Alias
+alias Aircon db
+#variable alias
+alias InPres r0
+alias InTemp r1
+alias OutPres r2
+alias OutTemp r3
+#define constants
+define MinInPres 10 
+refreshVars:
+l InPres Aircon PressureInput
+l InTemp Aircon TemperatureInput
+l OutPres Aircon PressureOutput
+l OutTemp Aircon TemperatureOutput
+checkInputPressure:
+brgt InPres MinInPres 3
+s Aircon Mode 0
+j refreshVars
+s Aircon Mode 1
+j refreshVars

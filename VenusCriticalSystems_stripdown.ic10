@@ -1,0 +1,29 @@
+#device Alias
+define ArcFurn -247344692 #arcFurnace
+define pOmni -327468845 #AirconPower
+define Sensor -1252983604 #RoomSensor
+#Set Variable Alias
+alias DoSmelt r2
+alias RoomTemp r4
+alias IsCooling r5
+#define constancts
+define RoomMinTemp 291.15 #c 18
+define RoomMaxTemp 298.15 #c 25
+move IsCooling 0
+refreshVars:
+lbns DoSmelt ArcFurn HASH("arcFurnace") 0 Occupied 3
+lbn RoomTemp Sensor HASH("RoomSensor") Temperature 3
+checkFurnace:
+breq DoSmelt 0 2
+sbn ArcFurn HASH("arcFurnace") Activate 1
+checkRoomTemp:
+breq IsCooling 0 5
+brgt RoomTemp RoomMinTemp 3
+move IsCooling 0
+sbn pOmni HASH("AirconPower") On 0
+jr 4
+brlt RoomTemp RoomMaxTemp 3
+move IsCooling 1
+sbn pOmni HASH("AirconPower") On 1
+nextCheck:
+j refreshVars

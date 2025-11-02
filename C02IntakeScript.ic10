@@ -1,0 +1,49 @@
+#Set Device Alias
+alias FiltrationSwitch d0
+alias VentSwitch d1
+alias TempGauge d2
+alias MainTankAnalyzer d3
+alias BufferTank d4
+alias IntakeAnalyzer d5
+#Set Variable Alias
+alias CurrentTemp r0
+alias IntakeLiquids r1
+alias BufferTankPressure r2
+alias MainTankPressure r3
+alias IntakeOn r4
+alias MainTankLiquids r5
+#Get Stats
+l CurrentTemp TempGauge Temperature
+l IntakeLiquids IntakeAnalyzer VolumeOfLiquid
+l BufferTankPressure BufferTank Pressure
+l MainTankPressure MainTankAnalyzer Pressure
+l IntakeOn VentSwitch Activate
+l MainTankLiquids MainTankAnalyzer VolumeOfLiquid
+#INTAKE Check Temp Turn System on if temp
+#-45deg = 228.15kelvin
+blt CurrentTemp 228.15 28
+s VentSwitch Activate 0
+s IntakeAnalyzer On 0 #disable intake analyzer
+j 33
+s IntakeAnalyzer On 1 #INTAKE Check pipe liquids
+blt IntakeLiquids 2.5 32
+s VentSwitch Activate 0
+j 33
+s VentSwitch Activate 1
+#FILTRATION
+#Check Buffer Tank has Gas
+bgt BufferTankPressure 10 38
+s FiltrationSwitch Activate 0
+j 15 #RETURN TO STATS
+#Check Main Tank is not Full
+blt MainTankPressure 20000 43
+s FiltrationSwitch Activate 0
+s MainTankAnalyzer On 0
+j 15 #RETURN TO STATS
+s MainTankAnalyzer On 1 #check main tank liquids
+blt MainTankLiquids 2.5 48
+s FiltrationSwitch Activate 0
+
+j 15 #RETURN TO STATS
+s FiltrationSwitch Activate 1
+j 15 #RETURN TO STATS

@@ -1,0 +1,31 @@
+#OXITE MANAGEMENT insert to filtration
+#device Alias
+alias FiltrationOxy db
+alias AlarmOxy d0
+#var Alias
+alias OxyPressure r0
+alias FilterLevel1 r1
+alias FilterLevel2 r2
+alias FilterLevelTotal r3
+alias InputPressure r4
+#define contants
+define minOxyPressure 50
+define maxOxyPressure 10000
+define minFilterLevel 10
+define maxInputPressure 10000
+define minInputPressure 50
+refreshVars: #refresh vars
+l OxyPressure FiltrationOxy PressureOutput
+ls FilterLevel1 FiltrationOxy 0 Quantity #TOTO check
+ls FilterLevel2 FiltrationOxy 1 Quantity #TOTO check
+add FilterLevelTotal FilterLevel1 FilterLevel2
+l InputPressure FiltrationOxy PressureInput
+filterChecks:
+brgt FilterLevelTotal minFilterLevel 2 
+s AlarmOxy On 1 #TODO filter level too low! sound alarm
+filterProcessing:
+brlt InputPressure minInputPressure 3
+s FiltrationOxy Mode 1
+j refreshVars
+s FiltrationOxy Mode 0
+j refreshVars

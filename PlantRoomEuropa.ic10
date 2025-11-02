@@ -1,0 +1,108 @@
+#device Alias
+alias HydroLeft d0
+alias HydroCenter d1 
+alias HydroRight d2
+define LED 1944485013 #"HarvestLight/GrowthLight"
+define Speaker -828056979 #nameit "PlantAlarm"
+define ActiveVent -1129453144 # "ExhaustVent"
+define WallHeater 24258244 # "PlantRoomHeater"
+define GasSensor -1252983604 #"PlantGasSensor"
+define DaylightSensor 1076425094 #"DaySensor"
+#Set Variable Alias
+alias CurrentTemp r0
+alias CurrentPressure r1
+alias PlantOccupied r2
+alias PlantGrowth r3
+alias PlantMature r4
+alias StatusMature r5
+alias StatusGrowth r6
+alias slotCurrent r7
+alias isNightTime r8
+alias TempPressureAlarm r9
+#define constancts
+define minTemp 294.15 #21 deg
+define maxTemp 302.15 #29 deg
+define minPressure 50
+define maxPressure 90
+define slotTotal 3
+define minDarknessTime 320
+refreshVars: #refresh vars
+lbn CurrentTemp GasSensor HASH("PlantGasSensor") Temperature 3
+lbn CurrentPressure GasSensor HASH("PlantGasSensor") Pressure 3
+lbn isNightTime DaylightSensor HASH("DaySensor") SolarIrradiance 3
+add StatusMature 0 0
+add StatusGrowth 0 0
+add TempPressureAlarm 0 0
+checkTempAndPRessure: 
+brlt CurrentTemp minTemp 3 # TooCold?
+sbn WallHeater HASH("PlantRoomHeater") On 0
+jr 2
+sbn WallHeater HASH("PlantRoomHeater") On 1
+brlt CurrentTemp maxTemp 2 #TooHot?
+add TempPressureAlarm 0 1 #toohot alarm
+brgt CurrentPressure minPressure 2
+add TempPressureAlarm 0 1 #lowpressure alarm
+brgt CurrentPressure maxPressure 3
+sbn ActiveVent HASH("ExhaustVent") On 0 #
+jr 2
+sbn ActiveVent HASH("ExhaustVent") On 1 #
+breq TempPressureAlarm 1 3
+sbn LED HASH("PlantAlarm") On 0 #Alarm off good
+jr 2
+sbn LED HASH("PlantAlarm") On 1 #alarm on bad
+add slotCurrent slotCurrent 1
+hydroLeft:
+brgt slotCurrent slotTotal 7 #skip to next machine
+ls PlantOccupied HydroLeft slotCurrent Occupied
+ls PlantGrowth HydroLeft slotCurrent Growth
+ls PlantMature HydroLeft slotCurrent Mature
+jal slotCheck 
+add slotCurrent slotCurrent 1
+j hydroLeft #loop back and check other slots
+add slotCurrent 0 0 #RESET slot to 0
+hydroCenter:
+brgt slotCurrent slotTotal 7 #skip to next machine
+ls PlantOccupied HydroCenter slotCurrent Occupied
+ls PlantGrowth HydroCenter slotCurrent Growth
+ls PlantMature HydroCenter slotCurrent Mature
+jal slotCheck 
+add slotCurrent slotCurrent 1
+j hydroCenter #loop back and check other slots
+add slotCurrent 0 0 #RESET slot to 0
+hydroRight:
+brgt slotCurrent slotTotal 7 #skip to next machine
+ls PlantOccupied HydroRight slotCurrent Occupied
+ls PlantGrowth HydroRight slotCurrent Growth
+ls PlantMature HydroRight slotCurrent Mature
+jal slotCheck 
+add slotCurrent slotCurrent 1
+j hydroRight #loop back and check other slots
+add slotCurrent 0 0 #RESET slot to 0
+j plantLights
+slotCheck:
+breq PlantOccupied 1 2
+j ra
+brlt PlantGrowth 5 2
+add StatusGrowth 1 0 #set growth problem 
+breq PlantMature 0 2
+add StatusMature 1 0 #set plant mature light
+j ra
+plantLights:
+breq StatusGrowth 1 3
+sbn LED HASH("GrowthLight") On 0
+jr 2
+sbn LED HASH("GrowthLight") On 1
+breq StatusMature 1 3
+sbn LED HASH("HarvestLight") On 0
+jr 2
+sbn LED HASH("HarvestLight") On 1
+growLights:
+breq isNightTime 0 5
+s HydroLeft On 1
+s HydroCenter On 1
+s HydroRight On 1
+j refreshVars
+s HydroLeft On 0
+s HydroCenter On 0
+s HydroRight On 0
+j refreshVars

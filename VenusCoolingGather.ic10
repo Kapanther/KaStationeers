@@ -1,0 +1,17 @@
+#device Alias
+define Aircon -2087593337 #aircon
+define Pump -321403609 #coolPump
+#Set Variable Alias
+alias Filtrate db
+alias CoolantTemp r0
+#define constancts
+define CoolTakeTemp 293.15 #20 C
+s Filtrate Mode 0
+refreshVars:
+lbn CoolantTemp Aircon HASH("aircon") TemperatureOutput 3
+TakeCoolant:
+brgt CoolantTemp CoolTakeTemp 3
+sbn Pump HASH("coolPump") On 1 
+jr 2
+sbn Pump HASH("coolPump") On 0 
+j refreshVars

@@ -1,0 +1,107 @@
+#device Alias
+alias GasSensor d0
+alias OnOffSwitch d1
+alias AirPump d2
+alias FuelReg d3
+alias Generator d4
+alias CoolVent d5
+#var Alias
+alias CurrentTemp r0
+alias CurrentPressure r1
+alias LastTemp r2
+alias DiffTemp r4
+alias SystemOn r6
+alias AirPumpOn r7
+alias AirPumpPressure r8
+alias FuelRegPressure r9
+alias GeneratorOn r10
+alias GeneratorPressure r11
+#constants
+define minPressure 25
+define desPressure 100
+define maxPressure 180
+define minTemp 281.15 #8 deg
+define desMinTemp 293.15 #20 deg
+define desMaxTemp 310.15 #37 deg
+define maxTemp 322.65 #49.5 deg
+define minFuelPressure 0.1
+define maxFuelPressure 5.1
+define minPumpVolume 1
+define maxPumpVolume 10
+refreshVars: #refresh vars
+l CurrentTemp GasSensor Temperature
+l CurrentPressure GasSensor Pressure
+sub DiffTemp CurrentTemp LastTemp
+l SystemOn OnOffSwitch Open
+l AirPumpOn AirPump On
+l AirPumpPressure AirPump Setting
+l FuelRegPressure FuelReg Setting
+l GeneratorPressure Generator Pressure
+l GeneratorOn Generator On
+OnOffState:
+breq SystemOn 1 checkAir
+s Generator On 0
+s AirPump On 0
+s FuelReg On 0
+s CoolVent On 0
+j exitReturn
+checkAir: #check room metrics
+brgt CurrentPressure minPressure 2
+j startAirPump
+brgt CurrentPressure desPressure 3 #PRESSURE
+s CoolVent On 0 #turn off Digital Valve
+j checkAirTemp
+s CoolVent On 1 #turn off Digital Valve
+checkAirTemp: #TEMP
+brgt CurrentTemp maxTemp 4
+breq GeneratorOn 0 2
+j monitorGen
+j startGen
+j stopGen
+startGen: #start Gen from Cold
+s FuelReg Setting minFuelPressure
+s FuelReg On 1
+s Generator On 1
+j exitReturn #BACK TO VARS
+monitorGen: #generator is started we now monitor
+brlt CurrentTemp desMinTemp 4 #check above des temp
+breq AirPumpOn 0 2
+j monitorAirPump
+j startAirPump
+j stopAirPump
+stopGen:
+s FuelReg On 0
+s Generator On 0
+#TODO possibly need to flush room and cool
+j exitReturn #BACK TO VARS
+startAirPump:
+s AirPump Setting minPumpVolume
+s AirPump On 1
+j exitReturn #BACK TO VARS
+monitorAirPump:
+brlt DiffTemp -0.1 7
+add AirPumpPressure 0.1 AirPumpPressure #incvol
+brlt AirPumpPressure maxPumpVolume 3
+s AirPump Setting maxPumpVolume
+j exitReturn #BACK TO VARS
+s AirPump Setting AirPumpPressure
+j exitReturn #BACK TO VARS
+sub AirPumpPressure AirPumpPressure 0.01 #decvol
+brgt AirPumpPressure minPumpVolume 3
+s AirPump Setting minPumpVolume
+j exitReturn #BACK TO VARS
+s AirPump Setting AirPumpPressure
+j exitReturn #BACK TO VARS
+stopAirPump:
+s AirPump On 0
+j increaseFuelPressure
+increaseFuelPressure:
+add FuelRegPressure 0.01 FuelRegPressure
+brgt FuelRegPressure maxFuelPressure 3
+s FuelReg Setting maxFuelPressure
+j exitReturn #BACK TO VARS
+s FuelReg Setting FuelRegPressure
+j exitReturn #BACK TO VARS
+exitReturn:
+add LastTemp 0 CurrentTemp
+j refreshVars

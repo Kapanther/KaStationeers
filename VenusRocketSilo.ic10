@@ -1,0 +1,99 @@
+#device Alias
+define dvVent -785498334 #SiloVentOut
+define dvSensor -1252983604 #SiloSensor
+#   #NAME == Vac Hang Umb Fuel Mixer
+define dvSwitch 321604921 #<Name>Switch
+define dvLED 1944485013 #<Name>Light
+define dvHangDoor -1351081801 #HangarDoor
+define dvUmbPower 1529453938 #UmbilicalPower
+define dvUmbGas -1814939203 #UmbilicalGas
+define dvUmbChute -958884053 #UmbilicalChute
+define dvGasMixer 2104106366 #FuelMixer
+define dvRegulator 209854039 #FuelRegulatpr
+define dvPipeAnal 435685051 #PAOxy PAVol
+define dvTankIns 272136332 #FuelTankBase
+#Set Variable Alias
+alias vRoomPres r0
+alias vRoomTemp r1
+alias vVacOn r2
+alias vHangOpen r3
+alias vUmbOpen r4
+alias vFuelMixerOn r5
+alias vFuelRegOn r6
+alias vOxyPres r7
+alias vVolPres r8
+alias vOxyRatio r9
+alias vFuelPres r10
+sb dvVent Mode 1 #set vents to out
+sb dvLED On 1 #turn all leds on
+sb dvHangDoor Mode 1# set hangar doors logic mode
+#define constants
+define MinOxyVolPres 20
+define MinOxyRatio 0.320
+define MaxOxyRatio 0.340
+define MaxFuelTankPres 4000
+refreshVars:
+lbn vRoomPres dvSensor HASH("SiloSensor") Pressure 3
+lbn vRoomTemp dvSensor HASH("SiloSensor") Temperature 3
+lbn vVacOn dvSwitch HASH("VacSwitch") Open 3
+lbn vHangOpen dvSwitch HASH("HangSwitch") Open 3
+lbn vUmbOpen dvSwitch HASH("UmbSwitch") Open 3
+lbn vFuelMixerOn dvSwitch HASH("MixerSwitch") Open 3
+lbn vFuelRegOn dvSwitch HASH("FuelSwitch") Open 3
+lbn vOxyPres dvPipeAnal HASH("PAOxy") Pressure 3
+lbn vVolPres dvPipeAnal HASH("PAVol") Pressure 3
+lbn vOxyRatio dvTankIns HASH("FuelTankBase") RatioOxygen 3
+lbn vFuelPres dvTankIns HASH("FuelTankBase") Pressure 3
+VacSystem:
+breq vVacOn 0 6
+brgt vRoomPres 0 2
+j HangarDoorSystem 
+sb dvVent On 1
+sbn dvLED HASH("VacLight") Color 2#Green
+j HangarDoorSystem
+sb dvVent On 0
+sbn dvLED HASH("VacLight") Color 4#red
+j HangarDoorSystem
+HangarDoorSystem:
+breq vHangOpen 0 4
+sb dvHangDoor Open 1
+sbn dvLED HASH("HangLight") Color 2#Green
+j UmbilcalSystem
+sb dvHangDoor Open 0
+sbn dvLED HASH("HangLight") Color 4#red
+j UmbilcalSystem
+UmbilcalSystem:
+breq vUmbOpen 0 6
+sb dvUmbPower Open 1
+sb dvUmbGas Open 1
+sb dvUmbChute Open 1
+sbn dvLED HASH("UmbLight") Color 2#Green
+j FuelMixCheck
+sb dvUmbPower Open 0
+sb dvUmbGas Open 0
+sb dvUmbChute Open 0
+sbn dvLED HASH("UmbLight") Color 4#red
+j FuelMixCheck
+FuelMixCheck:
+brgt vFuelPres MaxFuelTankPres 5
+brlt vOxyPres MinOxyVolPres 4
+brlt vVolPres MinOxyVolPres 3
+brlt vOxyRatio MinOxyRatio 2
+brlt vOxyRatio MaxOxyRatio 2
+sbn dvSwitch HASH("MixerSwitch") Open 0
+FuelMixSystem:
+breq vFuelMixerOn 0 4
+sbn dvGasMixer HASH("FuelMixer") On 1
+sbn dvLED HASH("MixerLight") Color 2#Green
+j FuelPumpSystem
+sbn dvGasMixer HASH("FuelMixer") On 0
+sbn dvLED HASH("MixerLight") Color 4#red
+j FuelPumpSystem
+FuelPumpSystem:
+breq vFuelRegOn 0 4
+sbn dvRegulator HASH("FuelRegulator") On 1
+sbn dvLED HASH("FuelLight") Color 2#Green
+j refreshVars
+sbn dvRegulator HASH("FuelRegulator") On 0
+sbn dvLED HASH("FuelLight") Color 4#red
+j refreshVars

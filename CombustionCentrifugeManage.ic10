@@ -1,0 +1,81 @@
+#KeepCombustionCentrifuge in Vacuum. Vent will expel
+#device Alias
+define Cfuge 1238905683 #ccFuge
+define Lever 1220484876 #centrifugeSwitch
+define LED 1944485013 #"centrifugeLight"
+define ActiveVent -1129453144 # "ExhaustVent"
+define Gas -1252983604 # "CombRoomSensor"
+define LEDDisplay -815193061 #dRPM/dStress/dThrottle"
+#Set Variable Alias
+alias CentSwitch r1
+alias CurRPM r2
+alias CurStress r3
+alias cThrottle r4
+alias cLimit r5
+alias CurContents r6
+alias CurPressure r7
+#Define Constants
+define MinFuelPressure 500
+define MaxRoomAirPressure 1
+define MinRPM 10
+define MaxStress 80
+define MinStress 20
+define throttleMinStep 10
+define throttleMax 100
+define limitMinStep 20
+define limitMax 80
+define sleepSeconds 10
+refreshVars:
+lbn CurPressure Gas HASH("CombRoomSensor") Pressure 3
+lbn CentSwitch Lever HASH("centrifugeSwitch") Open 3
+lbn CurRPM Cfuge HASH("ccFuge") Rpm 3
+sbn LEDDisplay HASH("dRPM") Setting CurRPM #
+lbn CurStress Cfuge HASH("ccFuge") Stress 3
+sbn LEDDisplay HASH("dStress") Setting CurStress #
+lbn cThrottle Cfuge HASH("ccFuge") Throttle 3
+sbn LEDDisplay HASH("dThrottle") Setting cThrottle #
+lbn cLimit Cfuge HASH("ccFuge") CombustionLimiter 3
+lbn CurContents Cfuge HASH("ccFuge") ImportCount 3
+checkRoomPressure:
+brgt CurPressure MaxRoomAirPressure 3
+sbn ActiveVent HASH("ExhaustVent") On 0 #
+j masterSwitch
+sbn ActiveVent HASH("ExhaustVent") On 1 #
+masterSwitch:
+sbn LED HASH("centrifugeLight") On 1
+breq CentSwitch 1 4 #turnOff
+sbn Cfuge HASH("ccFuge") On 0 
+sbn LED HASH("centrifugeLight") Color 4
+j refreshVars
+sbn Cfuge HASH("ccFuge") On 1 #StartCentrifuge
+sbn LED HASH("centrifugeLight") Color 2 
+checkContents:
+brgt CurContents 0 3 #yellow no cont
+sbn LED HASH("centrifugeLight") Color 5 
+j refreshVars 
+checkRunningState:
+brgt CurRPM MinRPM 6 #todo check RPM
+sbn Cfuge HASH("ccFuge") On 1 #StartCentrifuge
+sbn LED HASH("centrifugeLight") Color 2
+sbn Cfuge HASH("ccFuge") Throttle throttleMinStep
+sbn Cfuge HASH("ccFuge") CombustionLimiter limitMax
+j refreshVars
+manageCentrifuge:
+brgt CurStress MaxStress 4
+brlt CurStress MinStress 2
+j refreshVars
+j increaseThrottle
+j decreaseThrottle
+j refreshVars
+increaseThrottle:
+breq cThrottle throttleMax 4
+add cThrottle cThrottle throttleMinStep
+sbn Cfuge HASH("ccFuge") Throttle cThrottle
+sleep sleepSeconds
+j refreshVars
+decreaseThrottle:
+breq cThrottle 0 4
+sub cThrottle cThrottle throttleMinStep
+sbn Cfuge HASH("ccFuge") Throttle cThrottle
+sleep sleepSeconds
+j refreshVars

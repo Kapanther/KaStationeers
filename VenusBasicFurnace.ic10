@@ -1,0 +1,96 @@
+#device Alias
+define Furn 1947944864 #Furnace
+define ChuteBin -850484480 #ChuteBin
+define Tank 272136332 #tankIn tankOut
+define LED 1944485013 #systemLight
+define Sensor -1252983604 #powerSensor
+define Display -815193061 #sPressure
+define Switch 321604921 #systemSwitch
+define Battery -1388288459 #mainBattery
+define pOmni -327468845 #AirconPower
+define mLED -53151617 #PowerDisplay
+#Set Variable Alias
+alias SystemOn r0
+alias EngineOn r1
+alias AirconOn r2
+alias VentInOn r3
+alias IntakePres r4
+alias RoomPres r5
+alias RoomTemp r6
+alias EngPres r7
+alias BatCharge r8
+alias IsCooling r9
+alias PowerGen r10
+#define constancts
+define IntakeMinPres 5000
+define RoomMinPres 120
+define RoomMaxPres 200
+define RoomMinTemp 283.15 #10 C
+define RoomMaxTemp 323.15 #50 C
+define OperMaxTemp 363.15 #90 C
+define EngMinPres 20
+define EngMaxPres 10000# blows over 11000
+define BatMinCharge 2000000 
+define BatMaxCharge 8000000
+sbn LED HASH("systemLight") On 1 #systemLight
+sbn ActVent HASH("ventIn") Mode 1 #ventssettoout
+sbn ActVent HASH("ventRoomIn") Mode 0 #roomIn
+sbn ActVent HASH("ventRoomOut") Mode 1 #roomOut
+sbn ActVent HASH("pumpFlush") On 0 #coolOut
+move IsCooling 0
+refreshVars:
+lbn PowerGen StirEng HASH("stirEng") PowerGeneration 1 
+lbn SystemOn Switch HASH("systemSwitch") Open 3
+lbn EngineOn StirEng HASH("stirEng") On 3 
+lbn IntakePres Tank HASH("tankIn") Pressure 3
+lbn RoomPres Sensor HASH("powerSensor") Pressure 3
+lbn RoomTemp Sensor HASH("powerSensor") Temperature 3
+lbn EngPres StirEng HASH("stirEng") Pressure 3 #TODO
+lbn BatCharge Battery HASH("mainBattery") Charge 2
+sbn mLED HASH("PowerDisplay") Setting PowerGen
+checkRoomTemp:
+breq IsCooling 0 5
+brgt RoomTemp RoomMinTemp 3
+move IsCooling 0
+sbn pOmni HASH("AirconPower") On 0
+jr 4
+brlt RoomTemp RoomMaxTemp 3
+move IsCooling 1
+sbn pOmni HASH("AirconPower") On 1
+systemSwitchCheck:
+breq SystemOn 1 5
+sb StirEng On 0
+sb ActVent On 0
+sbn LED HASH("systemLight") Color 4#red
+j refreshVars
+sbn LED HASH("systemLight") Color 2#green
+checkIntakeTank:
+brgt IntakePres IntakeMinPres 3
+sbn ActVent HASH("ventIn") On 1 
+jr 2
+sbn ActVent HASH("ventIn") On 0 
+checkRoomPressure:
+brgt RoomPres RoomMinPres 3
+sbn ActVent HASH("ventRoomIn") On 1 
+jr 2
+sbn ActVent HASH("ventRoomIn") On 0 
+brlt RoomPres RoomMaxPres 3
+sbn ActVent HASH("ventRoomOut") On 1 
+jr 2
+sbn ActVent HASH("ventRoomOut") On 0 
+checkEngine:
+breq EngineOn 1 3
+brgt BatCharge BatMinCharge 4
+j EngineStart
+brgt EngPres EngMaxPres 2
+brlt BatCharge BatMaxCharge 2
+sb StirEng On 0
+j refreshVars
+EngineStart:
+brgt RoomTemp OperMaxTemp 4 #CHECK ROOM TEMP
+sb StirEng On 1
+sbn LED HASH("systemLight") Color 2#green
+j refreshVars
+sb StirEng On 0
+sbn LED HASH("systemLight") Color 5#yellow
+j refreshVars

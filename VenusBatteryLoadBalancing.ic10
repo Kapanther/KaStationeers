@@ -1,0 +1,66 @@
+#device Alias
+define sBattery -1388288459 #batBX1
+define LED -53151617 #ledCharge
+define TFL -1423212473 #batSW1
+#Set Variable Alias
+alias bChargeAvg r0
+alias bCount r1
+alias bCur r2
+alias bCurName r3
+alias BCurCharge r4
+alias bChargePer r5
+alias bChargeMax r6
+#define constancts
+define maxAvg 0.9
+sbn LED HASH("ledDebug") On 1 #nocoal
+refreshVars:
+sleep 30
+lb bChargeAvg sBattery Charge 0
+lb bCount sBattery On 1
+lb bChargeMax sBattery Maximum 1
+div bChargePer bChargeMax bChargeAvg
+sbn LED HASH("ledDebug") Setting bChargePer
+refereshstack:
+bgt sp 1 lockBattery 
+push HASH("batSW1")
+push HASH("batBX1")
+push HASH("batSW2")
+push HASH("batBX2")
+push HASH("batSW3")
+push HASH("batBX3")
+push HASH("batSW4")
+push HASH("batBX4")
+push HASH("batSW5")
+push HASH("batBX5")
+push HASH("batSW6")
+push HASH("batBX6")
+push HASH("batSW7")
+push HASH("batBX7")
+push HASH("batSW8")
+push HASH("batBX8")
+push HASH("batSW9")
+push HASH("batBX9")
+push HASH("batSW10")
+push HASH("batBX10")
+push HASH("batSW11")
+push HASH("batBX11")
+lockBattery:
+move bCur 0
+loopstart:
+beqz sp refreshVars
+add bCur bCur 1
+bgt bCur bCount refreshVars
+#lock battery if less than average
+pop bCurName #get battery name
+lbn BCurCharge sBattery bCurName Charge 2
+pop bCurName #get switch name
+#check if chargeAVG is greater than maxAvg
+brlt bChargePer maxAvg 3
+sbn TFL bCurName On 1
+j loopstart
+brgt BCurCharge bChargeAvg 3
+sbn TFL bCurName On 0
+j loopstart
+#greater than avg
+sbn TFL bCurName On 1
+j loopstart

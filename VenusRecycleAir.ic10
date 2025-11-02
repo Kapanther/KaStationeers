@@ -1,0 +1,49 @@
+#device Alias
+define Filtrate -348054045 #OxyFilter
+define Sensor -1252983604 #MSensor
+define InsTank 272136332 #WTank
+define ActVent -1129453144 #WasteVentIn
+#OxyRegulator
+#Set Variable Alias
+alias RoomPres r0
+alias RoomTemp r1
+alias OxyPres r2
+alias WastePres r3
+alias IsVenting r4
+alias IsFilling r5
+#define constancts
+define RoomMinTemp 291.15 #c 18
+define RoomMaxTemp 298.15 #c 25
+define RoomFillTemp 318.15 #c 45
+define RoomMinPres 30
+define RoomMaxPres 60
+define OxyTankMaxPres 5000
+define WasteTankMaxPres 10000
+move IsVenting 0
+move IsFilling 0
+sbn Filtrate HASH("OxyFilter") On 1
+sbn ActVent HASH("WasteVentIn") On 0
+sbn ActVent HASH("WasteVentIn") Mode 0
+refreshVars:
+lbn RoomTemp Sensor HASH("MSensor") Temperature 3
+lbn RoomPres Sensor HASH("MSensor") Pressure 3
+lbn IsVenting ActVent HASH("WasteVentIn") On 3
+lbn IsFilling Filtrate HASH("OxyFilter") Mode 3
+lbn OxyPres Filtrate HASH("OxyFilter") PressureOutput 3
+lbn WastePres InsTank HASH("WTank") Pressure 3
+FillOxygenFromRoom:
+brgt OxyPres OxyTankMaxPres 6
+brlt RoomPres RoomMinPres 5
+brgt RoomTemp RoomFillTemp 4
+#start filtration
+sbn Filtrate HASH("OxyFilter") Mode 1
+j FillWasteToRoom
+sbn Filtrate HASH("OxyFilter") Mode 0
+FillWasteToRoom:
+sbn ActVent HASH("WasteVentIn") Mode 0
+brgt RoomTemp RoomFillTemp 4
+brgt RoomPres RoomMaxPres 3
+sbn ActVent HASH("WasteVentIn") On 1
+j refreshVars
+sbn ActVent HASH("WasteVentIn") On 0
+j refreshVars

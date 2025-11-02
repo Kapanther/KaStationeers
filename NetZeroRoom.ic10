@@ -1,0 +1,82 @@
+#Net Zero Room
+#shuts down the autolathe pipe bender electroptiner if idle for logner neough
+#also turns off lights unless in room
+define Autolathe 336213101 #Autolathe
+define Pipebender -1888248335 #PipeBender
+define Electroprint 1307165496 #ElectroPrinter
+define ToolMaker -465741100 #ToolMaker
+define Motionsensor -1713470563 #MotionSensor
+define LighLongWide 555215790 #LightLongWide
+define LEDDisplaySmall -815193061 #dLatheIdle
+#Set Variable Alias
+alias AutoLatheOn r1
+alias AutoLatheIdleTimer r2
+alias AutoLatheCompletion r3
+alias PipeBendOn r4
+alias PipeBendIdleTimer r5
+alias PipeBendCompletion r6
+alias ElectroPrintOn r7
+alias ElectroPrintIdleTimer r8
+alias ElectroPrintCompletion r9
+alias ToolMakerOn r10
+alias ToolMakerIdleTimer r11
+alias ToolMakerCompletion r12
+alias MotionDetect r13
+alias MotionIdleTimer r14
+#Define Constants
+define MachineIdleMax 300 #5 minutes
+define LightOffSeconds 60 #1 minute
+refreshVars:
+lbn AutoLatheOn Autolathe HASH("Autolathe") On 3
+lbn AutoLatheCompletion Autolathe HASH("Autolathe") CompletionRatio 3
+lbn PipeBendOn Pipebender HASH("PipeBender") On 3
+lbn PipeBendCompletion Pipebender HASH("PipeBender") CompletionRatio 3
+lbn ElectroPrintOn Electroprint HASH("ElectroPrinter") On 3
+lbn ElectroPrintCompletion Electroprint HASH("ElectroPrinter") CompletionRatio 3
+lbn ToolMakerOn ToolMaker HASH("ToolMaker") On 3
+lbn ToolMakerCompletion ToolMaker HASH("ToolMaker") CompletionRatio 3
+lbn MotionDetect Motionsensor HASH("MotionSensor") Quantity 3
+sbn LEDDisplaySmall HASH("dLatheIdle") Setting ElectroPrintIdleTimer #write idle time to display
+
+#checkAutoLathe
+breq AutoLatheOn 1 2 #if autolathe on skip
+j checkPipeBender #skip to pipe bender
+add AutoLatheIdleTimer AutoLatheIdleTimer 1 #add one second to idle timer
+brgt AutoLatheIdleTimer MachineIdleMax 4 #if autolathe has been idle too long
+brlt AutoLatheCompletion 1 2 #if autolathe is still working so reset idle timer
+add AutoLatheIdleTimer 0 0 #reset idle timer to 0
+j checkPipeBender #skip to pipe bender
+sbn Autolathe HASH("Autolathe") On 0 #turn off autolathe as idle too long
+add AutoLatheIdleTimer 0 0 #reset idle timer to 0
+j refreshVars
+checkPipeBender:
+breq PipeBendOn 1 2 #if pipe bender on skip
+j checkElectroPrinter 
+add PipeBendIdleTimer PipeBendIdleTimer 1 #add one second to idle timer
+brgt PipeBendIdleTimer MachineIdleMax 4 #if pipe bender has been idle too long
+brlt PipeBendCompletion 1 2 #if pipe bender is still working so reset idle timer
+add PipeBendIdleTimer 0 0 #reset idle timer to 0
+j checkElectroPrinter 
+sbn Pipebender HASH("PipeBender") On 0 #turn off pipe bender as idle too long
+add PipeBendIdleTimer 0 0 #reset idle timer to 0
+checkElectroPrinter:
+breq ElectroPrintOn 1 2 #if electroprinter on skip
+j checkToolMaker 
+add ElectroPrintIdleTimer ElectroPrintIdleTimer 1 #add one second to idle timer
+brgt ElectroPrintIdleTimer MachineIdleMax 4 #if electroprinter has been idle too long
+brlt ElectroPrintCompletion 1 2 #if electroprinter is still working so reset idle timer
+add ElectroPrintIdleTimer 0 0 #reset idle timer to 0
+j checkToolMaker 
+sbn Electroprint HASH("ElectroPrinter") On 0 #turn off electroprinter as idle too long
+add ElectroPrintIdleTimer 0 0 #reset idle timer to 0
+checkToolMaker: #Tool maker is always on, so no need to check if on
+breq ToolMakerOn 1 2 #if tool maker off skip
+j refreshVars 
+add ToolMakerIdleTimer ToolMakerIdleTimer 1 #add one second to idle timer
+brgt ToolMakerIdleTimer MachineIdleMax 4 #if tool maker has been idle too long
+brlt ToolMakerCompletion 1 2 #if tool maker is still working so reset idle timer
+add ToolMakerIdleTimer 0 0 #reset idle timer to 0
+j refreshVars 
+sbn ToolMaker HASH("ToolMaker") On 0 #turn off tool maker as idle too long
+add ToolMakerIdleTimer 0 0 #reset idle timer to 0
+j refreshVars 

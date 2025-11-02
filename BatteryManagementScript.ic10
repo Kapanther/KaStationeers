@@ -1,0 +1,47 @@
+#device Alias
+alias OnOffSwitch d0
+alias Battery1 d1 
+alias Battery2 d2
+alias Battery3 d3
+alias Battery4 d4
+alias BatteryDisplay d5 #probably need some sepcode
+#var Alias
+alias Battery1Charge r0
+alias Battery2Charge r1
+alias Battery3Charge r2
+alias Battery4Charge r3
+alias BatTotalCharge r4
+alias BatteryRemaining r5
+alias Recharging r6
+#define vars
+define minBatteryPercent 10
+define maxBatteryPercent 90
+
+#read vars
+ReadVars:
+l Battery1Charge Battery1 Charge
+l Battery2Charge Battery2 Charge
+l Battery3Charge Battery3 Charge
+l Battery4Charge Battery4 Charge
+add BatTotalCharge 0 Battery1Charge
+add BatTotalCharge BatTotalCharge Battery2Charge
+add BatTotalCharge BatTotalCharge Battery3Charge
+add BatTotalCharge BatTotalCharge Battery4Charge
+div BatteryRemaining BatTotalCharge 140000
+#set display
+s BatteryDisplay Setting BatteryRemaining
+# turn on generator code if battery rem less10%
+breq Recharging 0 7
+brlt BatteryRemaining maxBatteryPercent 4
+s OnOffSwitch Open 0
+add Recharging 0 0
+j ReadVars
+s OnOffSwitch Open 1
+j ReadVars
+brgt BatteryRemaining minBatteryPercent 3
+s OnOffSwitch Open 1
+add Recharging 0 1
+j ReadVars
+s OnOffSwitch Open 0
+add Recharging 0 0
+j ReadVars

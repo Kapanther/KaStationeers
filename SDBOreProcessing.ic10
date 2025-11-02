@@ -1,0 +1,83 @@
+#device Alias
+define SDB 1155865682 #Ore<Name>
+define ArcFurnace -247344692 #Arc<Name>
+define Lever 1220484876 #masterSwitch #oreOpenSwitch
+define LED 1944485013 #"systemLight" "oreOpenLight"
+#Set Variable Alias
+alias MasterSwitch r0
+alias OreOpenSwitch r1
+alias SmeltIron r2
+alias SmeltGold r3
+alias SmeltCopper r4
+alias SmeltLead r5
+alias SmeltSilicon r6
+alias SmeltNickel r7
+alias SmeltSilver r8
+alias SmeltUranium r10
+alias SmeltCobalt r11
+#define constancts
+define someConstant 294.15 #TODO Constants
+refreshVars: #ScriptEntryPoint
+lbn MasterSwitch Lever HASH("masterSwitch") Open 3
+lbn OreOpenSwitch Lever HASH("oreOpenSwitch") Open 3
+SystemOnCheck:
+breq MasterSwitch 1 6
+sb ArcFurnace On 0 #ALLOFF
+sb SDB On 0#ALLOFF
+sbn LED HASH("systemLight") On 1
+sbn LED HASH("systemLight") Color 4
+j refreshVars #Loop Back
+sb ArcFurnace On 1 #ALLON
+sb SDB On 1#ALLON
+sbn LED HASH("systemLight") On 1
+sbn LED HASH("systemLight") Color 2
+OpenOres:
+breq OreOpenSwitch 1 12
+sbn SDB HASH("OreIron") Open 0
+sbn SDB HASH("OreGold") Open 0
+sbn SDB HASH("OreCopper") Open 0
+sbn SDB HASH("OreLead") Open 0
+sbn SDB HASH("OreSilicon") Open 0
+sbn SDB HASH("OreNickel") Open 0
+sbn SDB HASH("OreSilver") Open 0
+sbn SDB HASH("OreCobalt") Open 0
+sbn LED HASH("oreOpenLight") On 0
+sbn LED HASH("oreOpenLight") Color 4
+j CheckArcFurnaces
+sbn SDB HASH("OreIron") Open 1
+sbn SDB HASH("OreGold") Open 1
+sbn SDB HASH("OreCopper") Open 1
+sbn SDB HASH("OreLead") Open 1
+sbn SDB HASH("OreSilicon") Open 1
+sbn SDB HASH("OreNickel") Open 1
+sbn SDB HASH("OreSilver") Open 1
+sbn SDB HASH("OreCobalt") Open 1
+sbn LED HASH("oreOpenLight") On 1
+sbn LED HASH("oreOpenLight") Color 2
+CheckArcFurnaces:
+lbns SmeltIron ArcFurnace HASH("ArcIron") 0 Occupied 3
+lbns SmeltGold ArcFurnace HASH("ArcGold") 0 Occupied 3
+lbns SmeltCopper ArcFurnace HASH("ArcCopper") 0 Occupied 3
+lbns SmeltLead ArcFurnace HASH("ArcLead") 0 Occupied 3
+lbns SmeltSilicon ArcFurnace HASH("ArcSilicon") 0 Occupied 3
+lbns SmeltNickel ArcFurnace HASH("ArcNickel") 0 Occupied 3
+lbns SmeltSilver ArcFurnace HASH("ArcSilver") 0 Occupied 3
+lbns SmeltCobalt ArcFurnace HASH("ArcCobalt") 0 Occupied 3
+ActivateFurnaces:
+breq SmeltIron 0 2
+sbn ArcFurnace HASH("ArcIron") Activate 1
+breq SmeltGold 0 2
+sbn ArcFurnace HASH("ArcGold") Activate 1
+breq SmeltCopper 0 2
+sbn ArcFurnace HASH("ArcCopper") Activate 1
+breq SmeltLead 0 2
+sbn ArcFurnace HASH("ArcLead") Activate 1
+breq SmeltSilicon 0 2
+sbn ArcFurnace HASH("ArcSilicon") Activate 1
+breq SmeltNickel 0 2
+sbn ArcFurnace HASH("ArcNickel") Activate 1
+breq SmeltSilver 0 2
+sbn ArcFurnace HASH("ArcSilver") Activate 1
+breq SmeltCobalt 0 2
+sbn ArcFurnace HASH("ArcCobalt") Activate 1
+j refreshVars #Loop Back

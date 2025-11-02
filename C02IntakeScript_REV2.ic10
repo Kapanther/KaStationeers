@@ -1,0 +1,54 @@
+#Set Device Alias
+alias FiltrationDevice d0
+define ActiveVents -1129453144
+alias TempGauge d1
+alias MainTankAnalyzer d2
+alias IntakeAnalyzer d3
+#Set Variable Alias
+alias CurrentTemp r0
+alias IntakeLiquids r1
+alias BufferTankPressure r2
+alias MainTankPressure r3
+alias IntakeOn r4
+alias MainTankLiquids r5
+#define Variables
+define maxPipeLiquid 2.2
+define maxPipeLiquidInput 1
+define maxBufferPressure 20000
+define minBufferPressure 10
+define targetTemp 228.15 #kelvins
+s IntakeAnalyzer On 1
+s MainTankAnalyzer On 1
+GetStats:
+l CurrentTemp TempGauge Temperature
+l IntakeLiquids IntakeAnalyzer VolumeOfLiquid
+l BufferTankPressure FiltrationDevice PressureInput
+l MainTankPressure FiltrationDevice PressureOutput
+l MainTankLiquids MainTankAnalyzer VolumeOfLiquid
+#INTAKE Check Temp Turn System on if temp
+#-45deg = 228.15kelvin
+brlt CurrentTemp targetTemp 4
+sb ActiveVents On 0
+s IntakeAnalyzer On 0 #disable intake analyzer
+j FilterAir
+s IntakeAnalyzer On 1 #INTAKE Check pipe liquids
+brlt IntakeLiquids maxPipeLiquidInput 3
+sb ActiveVents On 0
+j FilterAir
+sb ActiveVents On 1
+FilterAir: #FILTRATION
+#Check Buffer Tank has Gas
+brgt BufferTankPressure minBufferPressure 4
+s FiltrationDevice Mode 0
+j GetStats #RETURN TO STATS
+#Check Main Tank is not Full
+brlt MainTankPressure maxBufferPressure 4
+s FiltrationDevice Mode 0
+s MainTankAnalyzer On 0
+j GetStats #RETURN TO STATS
+s MainTankAnalyzer On 1 #check main tank liquids
+brlt MainTankLiquids maxPipeLiquid 3
+s FiltrationDevice Mode 0
+j GetStats #RETURN TO STATS
+s FiltrationDevice Mode 1
+j GetStats #RETURN TO STATS

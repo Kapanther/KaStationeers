@@ -1,0 +1,56 @@
+#device Alias
+define Genie 813146305 #mainGenerator
+define ArcFurn -247344692 #arcFurnace
+define sBattery -400115994 #mainStationBattery
+define LED 1944485013 #oreLight
+define pOmni -327468845 #AirconPower
+define Sensor -1252983604 #RoomSensor
+#Set Variable Alias
+alias bCharge r0
+alias GenOn r1
+alias DoSmelt r2
+alias HasCoal r3
+alias RoomTemp r4
+alias IsCooling r5
+#define constancts
+define StationMinCharge 50000 
+define StationMaxCharge 3500000
+define RoomMinTemp 291.15 #c 18
+define RoomMaxTemp 298.15 #c 25
+sbn LED HASH("oreLight") On 1 #nocoal
+move IsCooling 0
+refreshVars:
+lbn bCharge sBattery HASH("mainBattery") Charge 2
+lbn GenOn Genie HASH("mainGenerator") On 3 
+lbns DoSmelt ArcFurn HASH("arcFurnace") 0 Occupied 3
+lbns HasCoal Genie HASH("mainGenerator") 0 Occupied 3
+lbn RoomTemp Sensor HASH("RoomSensor") Temperature 3
+checkPower:
+breq GenOn 0 4
+brlt bCharge StationMaxCharge 2
+sbn Genie HASH("mainGenerator") On 0 #turnoff
+j checkCoal
+checkBattery:
+brgt bCharge StationMinCharge 3 
+sbn Genie HASH("mainGenerator") On 1 #turngenon
+jr 2
+sbn Genie HASH("mainGenerator") On 0 #turngenon
+checkCoal:
+breq HasCoal 1 3
+sbn LED HASH("oreLight") Color 4
+j checkFurnace
+sbn LED HASH("oreLight") Color 2
+checkFurnace:
+breq DoSmelt 0 2
+sbn ArcFurn HASH("arcFurnace") Activate 1
+checkRoomTemp:
+breq IsCooling 0 5
+brgt RoomTemp RoomMinTemp 3
+move IsCooling 0
+sbn pOmni HASH("AirconPower") On 0
+jr 4
+brlt RoomTemp RoomMaxTemp 3
+move IsCooling 1
+sbn pOmni HASH("AirconPower") On 1
+nextcheck:
+j refreshVars

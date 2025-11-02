@@ -1,0 +1,38 @@
+#FUEL MIX MANAGEMENT
+#device Alias
+alias TankOxy d0
+alias TankVol d1 
+alias TankFuel d2
+alias MixerFuel d3
+alias AlarmFuel d4
+#var Alias
+alias OxyPressure r0
+alias VolPressure r1
+alias NotroPressure r2
+alias FuelPressure r3
+alias NeedsFuel r4
+alias FreeOxy r5
+#define contants
+define minOxyPressure 200
+define minVolPressure 100
+define minReqFuelPressure 1000
+refreshVars: #refresh vars
+l OxyPressure TankOxy Pressure
+l VolPressure TankVol Pressure
+l FuelPressure TankFuel Pressure
+fuelChecks:#FuelLevelCheck
+brlt FuelPressure minReqFuelPressure 3 
+s MixerFuel On 0
+j refreshVars #fuel not needed
+oxyChecks: 
+brgt OxyPressure minOxyPressure 3
+s AlarmFuel On 1 #ALARM ON not enoughy oxy
+j refreshVars
+s AlarmFuel On 0 #ALARM OFF enough oxy
+brgt VolPressure minVolPressure 3
+s AlarmFuel On 1 #ALARM ON no volatiles
+j refreshVars
+s AlarmFuel On 0 #TODO alarm already on
+mixFuel:
+s MixerFuel On 1
+j refreshVars

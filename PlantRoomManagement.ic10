@@ -1,0 +1,44 @@
+#device Alias
+alias GasSensor d0
+alias Cooler d1 
+alias Heater d2
+alias Vent d3
+alias PumpRoom d4
+alias RegulatorCooler d5 
+#Set Variable Alias
+alias CurrentTemp r0
+alias CurrentPressure r1
+#define constancts
+define minTemp 295.15 #22 deg
+define maxTemp 301.15 #28 deg
+define minPressure 50
+define maxPressure 100
+define roomPumpSetting 5
+s Vent Setting 0 #makes usre vent goes outwards
+s PumpRoom Setting roomPumpSetting #room pump
+refreshVars: #refresh vars
+l CurrentTemp GasSensor Temperature
+l CurrentPressure GasSensor Pressure
+checkTemp: 
+brgt CurrentTemp minTemp 4
+s Heater On 1 # room is too cold
+s Cooler On 0
+j checkPressure
+brlt CurrentTemp maxTemp 4
+s Heater On 0 # room is too warm
+s Cooler On 1
+j checkPressure
+s Heater On 0 # room perfect all off
+s Cooler On 0
+checkPressure: 
+brgt CurrentPressure minPressure 4
+s PumpRoom On 1 # room pressure low
+s Vent On 0
+j refreshVars
+brlt CurrentPressure maxPressure 4
+s PumpRoom On 0 # room pressure high
+s Vent On 1
+j refreshVars
+s PumpRoom On 0 # room pressure good
+s Vent On 0
+j refreshVars

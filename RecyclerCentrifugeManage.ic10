@@ -1,0 +1,24 @@
+#Manage Recycler and Centrifuge
+#device Alias
+define Cfuge 690945935 #ccFuge
+define Recycler -1633947337 #ccRecycler
+define LedDispMed -53151617 #dispRegeants, dispImportCount
+#Set Variable Alias
+alias CfugeOn r1
+alias CfugeReagents r2
+alias CfugeImportAmount r3
+#Define Constants
+define MaxRegeants 200
+refreshVars:
+lbn CfugeOn Cfuge HASH("Cfuge") On 3
+lbn CfugeReagents Cfuge HASH("Cfuge") Reagents 3
+sbn LedDispMed HASH("dispRegeants") Setting CfugeReagents #
+lbn CfugeImportAmount Cfuge HASH("Cfuge") ImportCount 3
+sbn LedDispMed HASH("dispImportCount") Setting CfugeImportAmount #
+checkCentrifuge: #if regeants are still present, keep running
+breq CfugeReagents 0 4 #turnOff
+breq CfugeOn 1 3 #already on
+sbn Cfuge HASH("Cfuge") On 1 #StartCentrifuge
+j refreshVars
+
+

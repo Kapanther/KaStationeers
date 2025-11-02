@@ -1,0 +1,26 @@
+#OXITE MANAGEMENT insert to filtration
+#device Alias
+alias FiltrationRoom db
+alias AlarmRoomFiltration d1
+#var Alias
+alias InputPressure r0
+alias FilterLevel1 r1
+alias FilterLevel2 r2
+alias FilterLevelTotal r3
+#define contants
+define minFilterLevel 10
+define maxInputPressure 5000
+refreshVars: #refresh vars
+ls FilterLevel1 FiltrationRoom 0 Quantity #TOTO check
+ls FilterLevel2 FiltrationRoom 1 Quantity #TOTO check
+add FilterLevelTotal FilterLevel1 FilterLevel2 
+l InputPressure FiltrationRoom PressureInput
+filterChecks:
+brgt FilterLevelTotal minFilterLevel 2 
+s AlarmRoomFiltration On 1 #TODO filter level too low! sound alarm
+filterProcessing:
+brlt InputPressure maxInputPressure 3
+s FiltrationRoom Mode 1
+j refreshVars
+s FiltrationRoom Mode 0
+j refreshVars

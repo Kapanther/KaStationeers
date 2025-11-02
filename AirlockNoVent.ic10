@@ -1,0 +1,128 @@
+define LED 1944485013 #"LED"
+define OccSensor 322782515 #"Occupancy Sensor"
+define GasSensor -1252983604 #"Inner Sensor,Outer Sensor, AirlockSensor"
+define LightLongWide 555215790 #"Wall Light (Long Wide)"
+define GlassDoor -324331872 #"Inner Door,Outer Door"
+define ActiveVent -1129453144 #"Inner Vent,Outer Vent"
+define BackRegulator -1149857558 #"AirlockRegulator"
+define Lever 1220484876 #"EmergencyDoorRelease"
+alias Safe r3 #Set Variable Alias #R0-2 reserved for temp variables
+alias Emergency r4
+alias OccupiedSensor r5
+alias VENT r6 #these are the active Vents
+alias SENSOR r7 #this is the active Sensor
+alias ODOOR d0
+alias IDOOR d1
+define MaxBackPressure 40000 #define constants
+define OUTERSENSOR HASH("Outer Sensor")
+define INNERSENSOR HASH("Inner Sensor")
+define AIRLOCKSENSOR HASH("AirlockSensor")
+define OUTERVENT HASH("Outer Vent")
+define INNERVENT HASH("Inner Vent")
+restart:
+sb BackRegulator Setting MaxBackPressure
+sb BackRegulator On 1
+sb GlassDoor Lock 0
+sb GlassDoor Mode 1
+sb GlassDoor Open 0
+sb GlassDoor Setting 0
+sb ActiveVent On 0
+sb LED On 0
+move VENT OUTERVENT
+move SENSOR OUTERSENSOR
+start:
+sbn ActiveVent VENT Mode 0
+sbn ActiveVent VENT On 1
+sb LED Color Color.Red
+repressure:
+yield
+l r0 ODOOR Setting
+bnez r0 open
+lbn r0 GasSensor AIRLOCKSENSOR Pressure 3
+lbn r1 GasSensor SENSOR Pressure Average
+sbn ActiveVent VENT PressureExternal r1
+div r2 r0 r1
+blt r0 r1 repressure
+open:
+sb ActiveVent On 0
+yield
+s ODOOR Open 1
+s ODOOR Setting 1
+refreshVars:
+lb OccupiedSensor OccSensor Quantity 3
+lbn Emergency Lever HASH("EmergencyDoorRelease") Open 3
+checkEmergency:
+brlt Emergency 1 4 #lever off continue
+sb GlassDoor Open 1
+sb LED Color Color.Red
+j refreshVars
+checkOccupied:
+brlt OccupiedSensor 1 3 #not occupied continue
+sb LightLongWide On 1
+jr 2
+sb LightLongWide On 0
+yield
+jal checkSensors
+beq Safe 1 refreshVars
+l r0 ODOOR Setting
+l r1 IDOOR Setting
+bne r0 r1 refreshVars
+s ODOOR Open 0
+s ODOOR Setting 0
+s IDOOR Setting 0
+yield
+yield
+sbn ActiveVent VENT Mode 1
+sbn ActiveVent VENT On 1
+sb LED Color Color.Red
+depressure:
+yield
+l r0 ODOOR Setting
+bnez r0 open
+lbn r0 GasSensor AIRLOCKSENSOR Pressure 3
+lbn r1 GasSensor SENSOR Pressure 0
+div r2 r0 r1
+bgtz r0 depressure #loop until depressurized
+sb ActiveVent On 0 #turn off vent flip inner/outer
+seq r0 VENT OUTERVENT
+select VENT r0 INNERVENT OUTERVENT
+select SENSOR r0 INNERSENSOR OUTERSENSOR
+alias ODOOR dr0
+seqz r0 r0
+alias IDOOR dr0
+j start
+checkSensors:
+lbn r0 GasSensor INNERSENSOR Pressure 0
+lbn r1 GasSensor OUTERSENSOR Pressure 0
+sap Safe r0 r1 0.1
+lbn r0 GasSensor INNERSENSOR Temperature 0
+lbn r1 GasSensor OUTERSENSOR Temperature 0
+sap r0 r0 r1 0.02
+and Safe Safe r0
+lbn r0 GasSensor INNERSENSOR RatioVolatiles 0
+lbn r1 GasSensor OUTERSENSOR RatioVolatiles 0
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 GasSensor INNERSENSOR RatioPollutant 0
+lbn r1 GasSensor OUTERSENSOR RatioPollutant 0
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 GasSensor INNERSENSOR RatioNitrousOxide 0
+lbn r1 GasSensor OUTERSENSOR RatioNitrousOxide 0
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 GasSensor INNERSENSOR RatioNitrogen 0
+lbn r1 GasSensor OUTERSENSOR RatioNitrogen 0
+sap r0 r0 r1 0.1
+and Safe Safe r0
+lbn r0 GasSensor INNERSENSOR RatioOxygen 0
+lbn r1 GasSensor OUTERSENSOR RatioOxygen 0
+sap r0 r0 r1 0.1
+and Safe Safe r0
+s IDOOR Open Safe
+sub r0 3 Safe
+sb LED Color r0
+j ra
