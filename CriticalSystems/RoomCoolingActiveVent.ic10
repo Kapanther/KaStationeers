@@ -1,0 +1,61 @@
+#device Alias
+alias GasSensor d0
+alias Vent d1 
+#Set Variable Alias
+alias CurrentTemp r0
+alias CurrentPressure r1
+alias isCooling r2
+alias isVentingOut r3
+alias isCoolingDown r4
+#define constancts
+define minTemp 295.15 #22 deg
+define idealTemp 298.15 #25 deg
+define maxTemp 303.15 #30 deg
+define minPressure 80
+define maxPressure 110
+define idealPressure 95
+s Vent Setting 0 #makes usre vent goes outwards
+s Vent PressureExternal 101 #sets external pressure sensor
+s Vent PressureInternal 0 #sets internal pressure sensor
+refreshVars: #refresh vars
+l CurrentTemp GasSensor Temperature
+l CurrentPressure GasSensor Pressure
+
+# check if venting
+checkVenting:
+brgt CurrentPressure maxPressure 3
+breq isVentingOut 1 3
+j checkTemp
+add isVentingOut 0 1
+j purgePressure
+checkTemp:
+brgt CurrentTemp maxTemp 3
+breq isCoolingDown 1 3
+j allOff
+add isCoolingDown 0 1
+j coolRoom
+allOff:
+add isVentingOut 0 0
+add isCoolingDown 0 0
+s Vent On 0
+j refreshVars
+
+# vent until pressure is ideal
+purgePressure:
+s Vent Setting 0 # 0 = outwards
+s Vent On 1
+brlt CurrentPressure idealPressure 2
+j refreshVars
+add isVentingOut 0 0 # pressure reached ideal, stop venting out flag
+s Vent On 0
+s Vent Setting 1
+j refreshVars
+
+coolRoom:
+s Vent Setting 1 # 1 = inwards
+s Vent On 1
+brlt CurrentTemp idealTemp 2
+j refreshVars
+add isCoolingDown 0 0 # temperature reached ideal, stop cooling down flag
+s Vent On 0
+j refreshVars
