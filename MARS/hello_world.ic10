@@ -1,0 +1,14 @@
+# Hello World - Mars Specific IC10 Script
+# This script is tailored for Mars environments
+# Mars atmosphere: 95.9% CO2, thin atmosphere, cold temperatures
+# This demonstrates basic IC10 structure for Mars-specific automation
+
+alias led d0
+
+start:
+# Turn on an LED or device connected to d0
+s led On 1
+# Wait/yield to prevent high CPU usage
+yield
+# Loop forever
+j start

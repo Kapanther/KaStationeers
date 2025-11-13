@@ -1,0 +1,14 @@
+# Hello World - Venus Specific IC10 Script
+# This script is tailored for Venus environments
+# Venus: Extremely hot, high pressure, corrosive atmosphere
+# This demonstrates basic IC10 structure for Venus-specific automation
+
+alias led d0
+
+start:
+# Turn on an LED or device connected to d0
+s led On 1
+# Wait/yield to prevent high CPU usage
+yield
+# Loop forever
+j start
