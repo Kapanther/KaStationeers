@@ -1,0 +1,113 @@
+# Set devices
+alias OuterDoor d0
+alias InnerDoor d1
+alias SensorToCheck r10
+alias VentToCheck r11
+alias Safe r12
+#Install sensors outside each side of the airlock
+define LPVENT -785498334
+define SENSOR -1252983604
+define OUTERVENT HASH("Outer Vent")
+define INNERVENT HASH("Inner Vent")
+define AIRLOCKSENSOR HASH("Airlock Sensor")
+define OUTERSENSOR HASH("Outer Sensor")
+define INNERSENSOR HASH("Inner Sensor")
+define PRESSUREREG HASH("Pressure Regulator")
+define INNERMAXPRESSURE 4000
+define INNERSETPRESSURE 3500 
+define OUTERMAXPRESSURE 6000
+define OUTERSETPRESSURE 5000
+restart:
+s OuterDoor Lock 0
+s OuterDoor Mode 1
+s InnerDoor Lock 0
+s InnerDoor Mode 1
+s OuterDoor Open 0
+s InnerDoor Open 0
+s OuterDoor Setting 0
+s InnerDoor Setting 0
+sb LPVENT On 0
+
+move VentToCheck OUTERVENT
+move SensorToCheck OUTERSENSOR
+start:
+sbn LPVENT VentToCheck Mode 0
+sbn LPVENT VentToCheck On 1
+repressure:
+yield
+l r0 OuterDoor Setting
+bnez r0 open
+lbn r0 SENSOR AIRLOCKSENSOR Pressure Maximum
+lbn r1 SENSOR SensorToCheck Pressure Average
+sbn LPVENT VentToCheck PressureExternal r1
+blt r0 r1 repressure
+open:
+sb LPVENT On 0
+yield
+s OuterDoor Open 1
+s OuterDoor Setting 1
+waitbutton:
+yield
+jal checksensors
+beq Safe 1 waitbutton
+l r0 OuterDoor Setting
+l r1 InnerDoor Setting
+bne r0 r1 waitbutton
+s OuterDoor Open 0
+s OuterDoor Setting 0
+s InnerDoor Setting 0
+yield
+yield
+sbn LPVENT VentToCheck Mode 1
+sbn LPVENT VentToCheck On 1
+depressure:
+yield
+l r0 OuterDoor Setting
+bnez r0 open
+lbn r0 SENSOR AIRLOCKSENSOR Pressure Maximum
+bgtz r0 depressure
+switch:
+sb LPVENT On 0
+seq r0 VentToCheck OUTERVENT
+select VentToCheck r0 INNERVENT OUTERVENT
+select SensorToCheck r0 INNERSENSOR OUTERSENSOR
+alias OuterDoor dr0
+seqz r0 r0
+alias InnerDoor dr0
+j start
+
+checksensors:
+lbn r0 SENSOR INNERSENSOR Pressure Average
+lbn r1 SENSOR OUTERSENSOR Pressure Average
+sap Safe r0 r1 0.1
+lbn r0 SENSOR INNERSENSOR Temperature Average
+lbn r1 SENSOR OUTERSENSOR Temperature Average
+sap r0 r0 r1 0.02
+and Safe Safe r0
+lbn r0 SENSOR INNERSENSOR RatioVolatiles Average
+lbn r1 SENSOR OUTERSENSOR RatioVolatiles Average
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 SENSOR INNERSENSOR RatioPollutant Average
+lbn r1 SENSOR OUTERSENSOR RatioPollutant Average
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 SENSOR INNERSENSOR RatioNitrousOxide Average
+lbn r1 SENSOR OUTERSENSOR RatioNitrousOxide Average
+max r0 r0 r1
+slt r0 r0 0.005
+and Safe Safe r0
+lbn r0 SENSOR INNERSENSOR RatioNitrogen Average
+lbn r1 SENSOR OUTERSENSOR RatioNitrogen Average
+sap r0 r0 r1 0.1
+and Safe Safe r0
+lbn r0 SENSOR INNERSENSOR RatioOxygen Average
+lbn r1 SENSOR OUTERSENSOR RatioOxygen Average
+sap r0 r0 r1 0.1
+and Safe Safe r0
+s InnerDoor Open Safe
+sub r0 3 Safe
+j ra
+

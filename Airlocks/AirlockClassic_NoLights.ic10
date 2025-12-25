@@ -1,0 +1,123 @@
+#Custome Airlock V2 CowsAreEvil
+#Will work as an airlock when needed
+#Will open doors when both sides are the same
+alias outerdoor d0
+alias innerdoor d1
+alias airlocksensor d2 #Gas Sensor
+
+define ACTIVEVENT -1129453144
+define SENSOR -1252983604
+define BACKPRESREG -1149857558
+alias vent r10
+alias sensor r11
+alias safe r12
+#Vents must be named as per below.
+#Multiple vents can be used.
+define OUTERVENT HASH("Outer Vent")
+define INNERVENT HASH("Inner Vent")
+#Install sensors outside each side of the airlock
+define OUTERSENSOR HASH("Outer Sensor")
+define INNERSENSOR HASH("Inner Sensor")
+
+restart:
+s outerdoor Lock 0
+s outerdoor Mode 1
+s innerdoor Lock 0
+s innerdoor Mode 1
+s outerdoor Open 0
+s innerdoor Open 0
+s outerdoor Setting 0
+s innerdoor Setting 0
+sb ACTIVEVENT On 0
+sb BACKPRESREG On 0
+
+
+move vent OUTERVENT
+move sensor OUTERSENSOR
+start:
+sbn ACTIVEVENT vent Mode 0
+sbn ACTIVEVENT vent On 1
+repressure:
+yield
+l r0 outerdoor Setting
+bnez r0 open
+l r0 airlocksensor Pressure
+lbn r1 SENSOR sensor Pressure Average
+sbn ACTIVEVENT vent PressureExternal r1
+blt r0 r1 repressure
+open:
+sb ACTIVEVENT On 0
+yield
+s outerdoor Open 1
+s outerdoor Setting 1
+waitbutton:
+yield
+jal checksensors
+beq safe 1 waitbutton
+l r0 outerdoor Setting
+l r1 innerdoor Setting
+bne r0 r1 waitbutton
+s outerdoor Open 0
+s outerdoor Setting 0
+s innerdoor Setting 0
+yield
+yield
+sbn ACTIVEVENT vent Mode 1
+sbn ACTIVEVENT vent On 1
+depressure:
+yield
+l r0 outerdoor Setting
+bnez r0 open
+l r0 airlocksensor Pressure
+lbn r1 SENSOR sensor Pressure Average
+bgtz r0 depressure
+switch:
+sb ACTIVEVENT On 0
+seq r0 vent OUTERVENT
+select vent r0 INNERVENT OUTERVENT
+select sensor r0 INNERSENSOR OUTERSENSOR
+alias outerdoor dr0
+seqz r0 r0
+alias innerdoor dr0
+j start
+
+checksensors:
+lb r0 ACTIVEVENT PressureOutput Maximum
+lb r1 BACKPRESREG Setting Minimum
+brlt r0 r1 3
+sb BACKPRESREG On 1
+jr 2
+sb BACKPRESREG On 0
+lbn r0 SENSOR INNERSENSOR Pressure Average
+lbn r1 SENSOR OUTERSENSOR Pressure Average
+sap safe r0 r1 0.1
+lbn r0 SENSOR INNERSENSOR Temperature Average
+lbn r1 SENSOR OUTERSENSOR Temperature Average
+sap r0 r0 r1 0.02
+and safe safe r0
+lbn r0 SENSOR INNERSENSOR RatioVolatiles Average
+lbn r1 SENSOR OUTERSENSOR RatioVolatiles Average
+max r0 r0 r1
+slt r0 r0 0.005
+and safe safe r0
+lbn r0 SENSOR INNERSENSOR RatioPollutant Average
+lbn r1 SENSOR OUTERSENSOR RatioPollutant Average
+max r0 r0 r1
+slt r0 r0 0.005
+and safe safe r0
+lbn r0 SENSOR INNERSENSOR RatioNitrousOxide Average
+lbn r1 SENSOR OUTERSENSOR RatioNitrousOxide Average
+max r0 r0 r1
+slt r0 r0 0.005
+and safe safe r0
+lbn r0 SENSOR INNERSENSOR RatioNitrogen Average
+lbn r1 SENSOR OUTERSENSOR RatioNitrogen Average
+sap r0 r0 r1 0.1
+and safe safe r0
+lbn r0 SENSOR INNERSENSOR RatioOxygen Average
+lbn r1 SENSOR OUTERSENSOR RatioOxygen Average
+sap r0 r0 r1 0.1
+and safe safe r0
+s innerdoor Open safe
+sub r0 3 safe
+j ra
