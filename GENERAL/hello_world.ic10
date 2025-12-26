@@ -1,0 +1,13 @@
+# Hello World - General IC10 Script
+# This is a basic IC10 script for Stationeers
+# This script demonstrates basic IC10 structure and looping
+
+alias led d0
+
+start:
+# Turn on an LED or device connected to d0
+s led On 1
+# Wait/yield to prevent high CPU usage
+yield
+# Loop forever
+j start
